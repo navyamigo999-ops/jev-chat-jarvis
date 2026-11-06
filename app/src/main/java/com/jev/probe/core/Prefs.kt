@@ -182,7 +182,7 @@ class Prefs(context: Context, prefsName: String = PREFS_MAIN) {
 
     /** Auto-analyze on every incoming message; if false, user taps to analyze. */
     var autoAnalyze: Boolean
-        get() = sp.getBoolean(K_AUTO, true)
+        get() = sp.getBoolean(K_AUTO, false)
         set(v) = sp.edit().putBoolean(K_AUTO, v).apply()
 
     // ------------------------------------------------------------- helpers
@@ -220,7 +220,7 @@ class Prefs(context: Context, prefsName: String = PREFS_MAIN) {
     }
 
     /** Readiness gate: the judge route is the one that must be configured. */
-    fun hasKey(): Boolean = judgeKey.isNotBlank()
+    fun hasKey(): Boolean = effectiveReplyKey().isNotBlank()
 
     companion object {
         private const val TAG = "JEVASSIST"
@@ -269,8 +269,8 @@ class Prefs(context: Context, prefsName: String = PREFS_MAIN) {
         const val DEFAULT_JUDGE_MODEL_TYPESAFE = "jev-latest"
 
         // Reply route presets (OpenAI-compatible chat completions).
-        const val DEFAULT_REPLY_BASE = "https://openrouter.ai/api/v1"
-        const val DEFAULT_REPLY_MODEL = "deepseek/deepseek-chat-v3.1"
+        const val DEFAULT_REPLY_BASE = "https://api.deepseek.com/v1"
+        const val DEFAULT_REPLY_MODEL = "deepseek-chat"
         const val DEEPSEEK_BASE = "https://api.deepseek.com/v1"
         const val DEEPSEEK_MODEL = "deepseek-chat"
         const val DASHSCOPE_BASE = "https://dashscope.aliyuncs.com/compatible-mode/v1"
