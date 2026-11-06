@@ -62,13 +62,13 @@ class MainActivity : AppCompatActivity() {
     private fun build() {
         container.removeAllViews()
 
-        container.addView(text("Jev 聊天助手", 24f, ink, bold = true))
-        container.addView(text("在聊天 App 旁读对方消息（已支持微信、QQ、X、飞书），给出判断和候选回复。发送始终由你手动点。",
+        container.addView(text("砚川聊天助手", 24f, ink, bold = true))
+        container.addView(text("在微信等聊天 App 旁读取当前对话，按需用 DeepSeek 生成 3 条候选回复。发送始终由你手动点。",
             13f, sub).apply { setPadding(0, dp(6), 0, dp(16)) })
 
         val a11y = isA11yEnabled()
         val overlay = Settings.canDrawOverlays(this)
-        val key = prefs.hasKey()   // judge route key: the one analysis cannot run without
+        val key = prefs.hasKey()   // DeepSeek reply API key
         val ready = a11y && overlay && key
 
         // Readiness card
@@ -90,7 +90,7 @@ class MainActivity : AppCompatActivity() {
 
         // Actions
         container.addView(sectionLabel("其他"))
-        container.addView(actionRow("设置", "密钥 · 模型 · 关系 · 透明度 · 会话白名单") {
+        container.addView(actionRow("设置", "DeepSeek Key · 关系 · OCR · 上下文 · 透明度") {
             startActivity(Intent(this, SettingsActivity::class.java))
         })
 
@@ -115,7 +115,7 @@ class MainActivity : AppCompatActivity() {
         c.addView(head)
         c.addView(checkLine("无障碍", a11y))
         c.addView(checkLine("悬浮窗", overlay))
-        c.addView(checkLine("密钥", key, okWord = "已设", noWord = "未设"))
+        c.addView(checkLine("DeepSeek Key", key, okWord = "已设", noWord = "未设"))
         // History recording is opt-in (off by default). Mention it here, never block on it.
         if (!prefs.contextEnabled) {
             c.addView(text("关联上下文未开启，可在设置里开启", 12f, sub).apply {
