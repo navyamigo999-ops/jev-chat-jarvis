@@ -67,7 +67,7 @@ class SettingsActivity : AppCompatActivity() {
         root.addView(header("设置"))
 
         // =================== 接口 ===================
-        root.addView(section("接口"))
+        root.addView(section("DeepSeek"))
 
         // --- 判断接口（Jev） ---
         val judgeCard = card()
@@ -145,33 +145,31 @@ class SettingsActivity : AppCompatActivity() {
             }
         })
         judgeCard.addView(judgeResult)
-        root.addView(judgeCard)
+        judgeCard.visibility = View.GONE\n        root.addView(judgeCard)
 
         // --- 回复接口 ---
         val replyCard = card()
-        replyCard.addView(cardTitle("回复接口"))
-        replyCard.addView(text("生成 3 条候选回复。任何 OpenAI 兼容地址，填到 /v1 为止。", 12f, sub))
+        replyCard.addView(cardTitle("DeepSeek 回复接口"))
+        replyCard.addView(text("只需一把 DeepSeek API Key，一次生成 3 条候选回复。", 12f, sub))
 
         val replyBaseEdit = edit(prefs.replyBaseUrl, Prefs.DEFAULT_REPLY_BASE)
         val replyModelEdit = edit(prefs.replyModel, Prefs.DEFAULT_REPLY_MODEL)
         val replyIdx = when (prefs.replyBaseUrl.trim().trimEnd('/')) {
-            Prefs.DEFAULT_REPLY_BASE -> 0
-            Prefs.DEEPSEEK_BASE -> 1
-            Prefs.DASHSCOPE_BASE -> 2
-            else -> 3
+            Prefs.DEEPSEEK_BASE -> 0
+            Prefs.DASHSCOPE_BASE -> 1
+            else -> 2
         }
         replyCard.addView(pills(
-            listOf("OpenRouter", "DeepSeek 官方", "通义兼容", "自定义"), replyIdx) { idx ->
+            listOf("DeepSeek 官方", "通义兼容", "自定义"), replyIdx) { idx ->
             when (idx) {
-                0 -> { replyBaseEdit.setText(Prefs.DEFAULT_REPLY_BASE); replyModelEdit.setText(Prefs.DEFAULT_REPLY_MODEL) }
-                1 -> { replyBaseEdit.setText(Prefs.DEEPSEEK_BASE); replyModelEdit.setText(Prefs.DEEPSEEK_MODEL) }
-                2 -> { replyBaseEdit.setText(Prefs.DASHSCOPE_BASE); replyModelEdit.setText(Prefs.DASHSCOPE_MODEL) }
+                0 -> { replyBaseEdit.setText(Prefs.DEEPSEEK_BASE); replyModelEdit.setText(Prefs.DEEPSEEK_MODEL) }
+                1 -> { replyBaseEdit.setText(Prefs.DASHSCOPE_BASE); replyModelEdit.setText(Prefs.DASHSCOPE_MODEL) }
             }
         })
         replyCard.addView(label("Base URL"))
         replyCard.addView(replyBaseEdit)
         replyCard.addView(label("密钥"))
-        replyCard.addView(edit(prefs.replyKey, "留空则用判断接口密钥", password = true).also { replyKeyEdit = it })
+        replyCard.addView(edit(prefs.replyKey, "sk-...", password = true).also { replyKeyEdit = it })
         replyCard.addView(label("模型"))
         replyCard.addView(replyModelEdit)
         val replyResult = resultText()
@@ -184,7 +182,7 @@ class SettingsActivity : AppCompatActivity() {
                 replyKey = replyKeyEdit.text.toString().trim()
                 replyModel = model.ifBlank { Prefs.DEFAULT_REPLY_MODEL }
             }
-            if (probe.effectiveReplyKey().isBlank()) { replyResult.text = "请先填密钥（或填判断接口密钥）"; return@cardBtn }
+            if (probe.effectiveReplyKey().isBlank()) { replyResult.text = "请先填 DeepSeek API Key"; return@cardBtn }
             replyResult.text = "测试中…"
             worker.execute {
                 val t0 = System.currentTimeMillis()
@@ -258,12 +256,12 @@ class SettingsActivity : AppCompatActivity() {
             }
         })
         visionCard.addView(visionResult)
-        root.addView(visionCard)
+        visionCard.visibility = View.GONE\n        root.addView(visionCard)
 
         // =================== 分析 ===================
         root.addView(section("分析"))
         val card2 = card()
-        card2.addView(label("关系描述（给 Jev 判断用）"))
+        card2.addView(label("关系描述（给 DeepSeek 生成回复用）"))
         val relEdit = edit(prefs.relationship, Prefs.DEFAULT_REL)
         card2.addView(relEdit)
         card2.addView(label("会话白名单（每行一个关键词，空=所有会话）"))
@@ -271,7 +269,7 @@ class SettingsActivity : AppCompatActivity() {
             inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_FLAG_MULTI_LINE; minLines = 2
         }
         card2.addView(wlEdit)
-        val autoRow = toggleRow("对方发消息时自动分析", prefs.autoAnalyze)
+        val autoRow = toggleRow("对方发消息时自动生成回复", prefs.autoAnalyze)
         card2.addView(autoRow)
 
         // --- OCR 兜底（B 阶段）---
