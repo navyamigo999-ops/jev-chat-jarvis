@@ -126,7 +126,7 @@ class OverlayController(private val ctx: Context) {
             layoutParams = FrameLayout.LayoutParams(dp(52), dp(52))
         }
         val b = TextView(ctx).apply {
-            text = "Jev"
+            text = "砚"
             setTextColor(Color.WHITE)
             gravity = Gravity.CENTER
             textSize = 13f
@@ -164,7 +164,7 @@ class OverlayController(private val ctx: Context) {
         // Header
         val header = LinearLayout(ctx).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL }
         header.addView(TextView(ctx).apply {
-            text = "Jev 分析"; setTextColor(Color.parseColor("#111827")); textSize = 15f
+            text = "砚川 · 候选回复"; setTextColor(Color.parseColor("#111827")); textSize = 15f
             setTypeface(typeface, Typeface.BOLD)
             layoutParams = LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f)
         })
@@ -417,7 +417,7 @@ class OverlayController(private val ctx: Context) {
         a.tensionResolved?.let { if (it >= 0.7) views.add(line("✓ 紧张已缓解", "#16A34A", 12f)) }
 
         views.add(divider())
-        views.add(line("候选回复（Jev 排序）", "#9CA3AF", 12f))
+        views.add(line("候选回复", "#9CA3AF", 12f))
         if (generating) {
             views.add(hint("生成中…"))
         } else {
@@ -456,7 +456,7 @@ class OverlayController(private val ctx: Context) {
     }
 
     private fun replyCard(rank: Int, text: String, pct: Int, onFill: (String) -> Unit): View {
-        val top = rank == 1
+        val top = false
         val cardBg = if (top) Color.parseColor("#EAF1FF") else Color.parseColor("#F3F4F6")
         val c = LinearLayout(ctx).apply {
             orientation = LinearLayout.VERTICAL
@@ -467,7 +467,7 @@ class OverlayController(private val ctx: Context) {
             ).apply { topMargin = dp(6) }
         }
         c.addView(TextView(ctx).apply {
-            this.text = "#$rank · ${pct}%"; setTextColor(Color.parseColor("#3A7AFE")); textSize = 11f
+            this.text = "#$rank"; setTextColor(Color.parseColor("#3A7AFE")); textSize = 11f
             setTypeface(typeface, Typeface.BOLD)
         })
         c.addView(TextView(ctx).apply {
