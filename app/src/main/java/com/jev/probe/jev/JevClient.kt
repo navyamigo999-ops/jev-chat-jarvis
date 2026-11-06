@@ -7,34 +7,46 @@ import com.jev.probe.core.RankedReply
 import com.jev.probe.core.kb.ChatContext
 
 /**
- * Thin facade over the three split clients so callers keep one entry point.
- * Construct with [Prefs] — every route reads its own address / key / model from
- * there, so switching providers in settings takes effect on the next call.
+ * 砚川 DeepSeek 精简版：
+ * 保留原工程对 JevClient 的调用接口，但不再调用 Jev/TypeSafe/OpenRouter。
+ *
+ * judge() 仅返回本地空结果；
+ * draftAndRank() 只调用一次 ReplyClient，生成 3 条候选并保留原顺序。
  */
 class JevClient(prefs: Prefs) {
-
-    private val judgeClient = JudgeClient(prefs)
     private val replyClient = ReplyClient(prefs)
 
-    /** The 7 judgment questions. Errors come back inside [Analysis.error]. */
-    fun judge(snapshot: ChatSnapshot, relationship: String, ctx: ChatContext? = null): Analysis =
-        judgeClient.judge(snapshot, relationship, ctx)
+    fun judge(
+        snapshot: ChatSnapshot,
+        relationship: String,
+        ctx: ChatContext? = null
+    ): Analysis = emptyAnalysis()
 
-    /** Draft 3 candidates on the reply route, then rank them on the judge route. */
     fun draftAndRank(
         snapshot: ChatSnapshot,
         relationship: String,
         ctx: ChatContext? = null
-    ): List<RankedReply> {
-        val candidates = replyClient.draft(snapshot, relationship, ctx)
-        return judgeClient.rank(snapshot, relationship, candidates, ctx)
-    }
+    ): List<RankedReply> = replyClient.draft(snapshot, relationship, ctx)
+        .map { RankedReply(it, 0.0) }
 
-    /** Judge + replies, sequential. Used by the settings connectivity test. */
-    fun analyze(snapshot: ChatSnapshot, relationship: String, ctx: ChatContext? = null): Analysis {
-        val a = judge(snapshot, relationship, ctx)
-        if (a.error != null) return a
-        val ranked = try { draftAndRank(snapshot, relationship, ctx) } catch (e: Exception) { emptyList() }
-        return a.copy(rankedReplies = ranked)
-    }
+    fun analyze(
+        snapshot: ChatSnapshot,
+        relationship: String,
+        ctx: ChatContext? = null
+    ): Analysis = emptyAnalysis().copy(
+        rankedReplies = draftAndRank(snapshot, relationship, ctx)
+    )
+
+    private fun emptyAnalysis() = Analysis(
+        trueIntent = null,
+        dangerLevel = null,
+        sheNeeds = null,
+        shouldReplyNow = null,
+        bestAction = null,
+        tensionResolved = null,
+        literalQuestion = null,
+        rankedReplies = emptyList(),
+        latencyMs = 0L,
+        error = null
+    )
 }
