@@ -467,7 +467,11 @@ class OverlayController(private val ctx: Context) {
             ).apply { topMargin = dp(6) }
         }
         c.addView(TextView(ctx).apply {
-            this.text = "#$rank"; setTextColor(Color.parseColor("#3A7AFE")); textSize = 11f
+            this.text = when (rank) {
+                1 -> "开朗少女"
+                2 -> "性感御姐"
+                else -> "自然女友"
+            }; setTextColor(Color.parseColor("#3A7AFE")); textSize = 11f
             setTypeface(typeface, Typeface.BOLD)
         })
         c.addView(TextView(ctx).apply {
@@ -495,7 +499,7 @@ class OverlayController(private val ctx: Context) {
     }
 
     private fun reAnalyzeBtn() = TextView(ctx).apply {
-        text = "重新分析"; textSize = 13f; gravity = Gravity.CENTER
+        text = "重新生成"; textSize = 13f; gravity = Gravity.CENTER
         setTextColor(Color.parseColor("#6B7280"))
         setPadding(dp(10), dp(10), dp(10), dp(4))
         setOnClickListener { onManualAnalyze?.invoke() }
