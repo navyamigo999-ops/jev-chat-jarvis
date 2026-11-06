@@ -145,7 +145,8 @@ class SettingsActivity : AppCompatActivity() {
             }
         })
         judgeCard.addView(judgeResult)
-        judgeCard.visibility = View.GONE\n        root.addView(judgeCard)
+        judgeCard.visibility = View.GONE
+        root.addView(judgeCard)
 
         // --- 回复接口 ---
         val replyCard = card()
@@ -256,7 +257,8 @@ class SettingsActivity : AppCompatActivity() {
             }
         })
         visionCard.addView(visionResult)
-        visionCard.visibility = View.GONE\n        root.addView(visionCard)
+        visionCard.visibility = View.GONE
+        root.addView(visionCard)
 
         // =================== 分析 ===================
         root.addView(section("分析"))
