@@ -126,7 +126,7 @@ class OverlayController(private val ctx: Context) {
             layoutParams = FrameLayout.LayoutParams(dp(52), dp(52))
         }
         val b = TextView(ctx).apply {
-            text = "砚"
+            text = "Yan"
             setTextColor(Color.WHITE)
             gravity = Gravity.CENTER
             textSize = 13f
@@ -164,7 +164,7 @@ class OverlayController(private val ctx: Context) {
         // Header
         val header = LinearLayout(ctx).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL }
         header.addView(TextView(ctx).apply {
-            text = "砚川 · 候选回复"; setTextColor(Color.parseColor("#111827")); textSize = 15f
+            text = "候选回复"; setTextColor(Color.parseColor("#111827")); textSize = 15f
             setTypeface(typeface, Typeface.BOLD)
             layoutParams = LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f)
         })
@@ -467,11 +467,7 @@ class OverlayController(private val ctx: Context) {
             ).apply { topMargin = dp(6) }
         }
         c.addView(TextView(ctx).apply {
-            this.text = when (rank) {
-                1 -> "开朗少女"
-                2 -> "性感御姐"
-                else -> "自然女友"
-            }; setTextColor(Color.parseColor("#3A7AFE")); textSize = 11f
+            this.text = "回复 $rank"; setTextColor(Color.parseColor("#3A7AFE")); textSize = 11f
             setTypeface(typeface, Typeface.BOLD)
         })
         c.addView(TextView(ctx).apply {

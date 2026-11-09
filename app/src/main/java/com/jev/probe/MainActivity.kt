@@ -62,7 +62,7 @@ class MainActivity : AppCompatActivity() {
     private fun build() {
         container.removeAllViews()
 
-        container.addView(text("砚川聊天助手", 24f, ink, bold = true))
+        container.addView(text("Yan 聊天助手", 24f, ink, bold = true))
         container.addView(text("在微信等聊天 App 旁读取当前对话，按需用 DeepSeek 生成 3 条候选回复。发送始终由你手动点。",
             13f, sub).apply { setPadding(0, dp(6), 0, dp(16)) })
 
