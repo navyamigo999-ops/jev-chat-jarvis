@@ -86,9 +86,7 @@ open class ChatCaptureService : AccessibilityService() {
         super.onServiceConnected()
         prefs = Prefs(this)
         overlay = OverlayController(this)
-        overlay?.onManualAnalyze = {
-            currentSnapshot?.let { pendingSnapshot = it; runAnalysis() }
-        }
+        overlay?.onManualAnalyze = { manualAnalyzeCurrent() }
         // Bubble menu: file the open conversation as a knowledge-base contact.
         // Contacts are never created automatically — this is the one-tap way in.
         overlay?.onSaveContact = {
@@ -154,6 +152,52 @@ open class ChatCaptureService : AccessibilityService() {
             AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED,
             AccessibilityEvent.TYPE_VIEW_SCROLLED -> maybeCapture()
         }
+    }
+
+    /**
+     * Manual tap must always re-read the window that is on screen now.
+     *
+     * The old implementation only reused [currentSnapshot]. After Android/vivo
+     * reconnects the accessibility service that cache is empty, so the button
+     * looked tappable but silently did nothing. Re-extracting here also prevents
+     * a stale conversation from being analyzed after switching chats.
+     */
+    private fun manualAnalyzeCurrent() {
+        val root = rootInActiveWindow
+        if (root == null) {
+            main.post { overlay?.showError("暂时读不到当前窗口，切回聊天后再试") }
+            return
+        }
+        val pkg = root.packageName?.toString() ?: ""
+        val adapter = adapters[pkg]
+        if (adapter == null) {
+            main.post { overlay?.showError("当前应用暂未适配直接读取；可长按 Yan 选择“截屏识别一次”") }
+            return
+        }
+        val raw = adapter.extract(root, resources)
+        if (raw == null) {
+            main.post { overlay?.showError("没识别到当前聊天窗口，先进入具体聊天再试") }
+            return
+        }
+        val snapshot = stabilizeTitle(pkg, raw)
+        if (!prefs.isAllowed(snapshot.title)) {
+            main.post { overlay?.showError("当前会话被过滤设置排除了") }
+            return
+        }
+        if (snapshot.messages.isEmpty()) {
+            if (prefs.ocrFallback) {
+                ocrCapture(snapshot.title, snapshot.bubbleRects, pkg, manual = true)
+            } else {
+                main.post { overlay?.showError("这一屏暂时读不到消息文字，可开启 OCR 后再试") }
+            }
+            return
+        }
+
+        if (pkg != activePkg) { activePkg = pkg; lastSignature = "" }
+        currentSnapshot = snapshot
+        pendingSnapshot = snapshot
+        lastSignature = snapshot.signature()
+        runAnalysis()
     }
 
     private fun maybeCapture() {
