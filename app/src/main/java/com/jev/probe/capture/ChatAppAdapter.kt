@@ -141,40 +141,121 @@ class WeChatAdapter : ChatAppAdapter {
 
     override fun extract(root: AccessibilityNodeInfo, res: Resources): ChatSnapshot? {
         val width = res.displayMetrics.widthPixels
-        val bubbles = ArrayList<Triple<Int, Int, String>>() // top, centerX, text
-        var firstBubbleTop = Int.MAX_VALUE
-        var isChat = false
+        val height = res.displayMetrics.heightPixels
+        val topBand = (height * 0.12).toInt()
+
+        // Primary path: the resource id verified on older WeChat builds.
+        val exact = ArrayList<Triple<Int, Int, String>>() // top, centerX, text
+        var exactFirstTop = Int.MAX_VALUE
+        var sawExactBubble = false
+
+        // Compatibility path: WeChat occasionally changes internal resource ids.
+        // A real chat still has an editable composer near the bottom, while its
+        // visible message text lives in the middle of the screen. We collect only
+        // TextViews there and infer side from horizontal alignment.
+        val fallback = ArrayList<FallbackText>()
+        var composerTop = Int.MAX_VALUE
+        var hasComposer = false
 
         val stack = ArrayDeque<AccessibilityNodeInfo>()
         stack.addLast(root)
         var guard = 0
-        while (stack.isNotEmpty() && guard < 5000) {
+        while (stack.isNotEmpty() && guard < 6000) {
             guard++
             val node = stack.removeLast()
-            val id = node.viewIdResourceName
-            val text = node.text?.toString()
+            val id = node.viewIdResourceName ?: ""
+            val cls = node.className?.toString() ?: ""
+            val text = node.text?.toString()?.trim()
+            val b = Rect(); node.getBoundsInScreen(b)
+
             if (id == BUBBLE_ID) {
-                isChat = true
+                sawExactBubble = true
                 if (!text.isNullOrBlank()) {
-                    val b = Rect(); node.getBoundsInScreen(b)
-                    bubbles.add(Triple(b.top, b.centerX(), text))
-                    if (b.top < firstBubbleTop) firstBubbleTop = b.top
+                    exact.add(Triple(b.top, b.centerX(), text))
+                    if (b.top < exactFirstTop) exactFirstTop = b.top
                 }
             }
+
+            // Search/list boxes live near the top; the chat composer is near the
+            // bottom (or above the IME when the keyboard is open).
+            if ((node.isEditable || cls == "android.widget.EditText") &&
+                b.top > (height * 0.40).toInt()
+            ) {
+                hasComposer = true
+                if (b.top < composerTop) composerTop = b.top
+            }
+
+            if (!text.isNullOrBlank() && cls == "android.widget.TextView" &&
+                b.width() > 0 && b.height() > 0 &&
+                b.top > topBand && b.top < (height * 0.86).toInt() &&
+                !looksLikeTimestamp(text) && !isWeChatChromeText(text)
+            ) {
+                // Centered strips are usually timestamps/system notices, not bubbles.
+                val leftGap = b.left
+                val rightGap = width - b.right
+                if (kotlin.math.abs(leftGap - rightGap) > (width * 0.12).toInt()) {
+                    fallback.add(FallbackText(b.top, b.left, b.right, text))
+                }
+            }
+
             for (i in node.childCount - 1 downTo 0) node.getChild(i)?.let { stack.addLast(it) }
         }
-        val title = findWeChatTitle(root, firstBubbleTop, width, res)
-        // In a chat but nothing readable → empty snapshot, the OCR fallback cue.
-        if (bubbles.isEmpty()) return if (isChat) ChatSnapshot(title, emptyList()) else null
-        bubbles.sortBy { it.first }
-        val msgs = bubbles.map { (_, cx, text) ->
-            Msg(if (cx > width / 2) "me" else "other", text)
+
+        // Keep the old verified route whenever it still works.
+        if (exact.isNotEmpty()) {
+            val title = findWeChatTitle(root, exactFirstTop, width, res)
+            exact.sortBy { it.first }
+            val msgs = exact.map { (_, cx, text) ->
+                Msg(if (cx > width / 2) "me" else "other", text)
+            }
+            return ChatSnapshot(title, msgs)
+        }
+        if (sawExactBubble) {
+            val title = findWeChatTitle(root, Int.MAX_VALUE, width, res)
+            return ChatSnapshot(title, emptyList())
+        }
+
+        // Changed WeChat build: only accept the generic route when a real bottom
+        // composer proves we are inside a conversation.
+        if (!hasComposer) return null
+
+        val contentBottom = if (composerTop != Int.MAX_VALUE) composerTop else (height * 0.86).toInt()
+        val usable = fallback
+            .filter { it.top < contentBottom }
+            .distinctBy { "${it.top}|${it.left}|${it.right}|${it.text}" }
+            .sortedBy { it.top }
+
+        val firstTop = usable.firstOrNull()?.top ?: Int.MAX_VALUE
+        val title = findWeChatTitle(root, firstTop, width, res)
+        if (usable.isEmpty()) return ChatSnapshot(title, emptyList())
+
+        val msgs = usable.map { t ->
+            val leftGap = t.left
+            val rightGap = width - t.right
+            Msg(if (rightGap < leftGap) "me" else "other", t.text)
         }
         return ChatSnapshot(title, msgs)
     }
 
+    private data class FallbackText(
+        val top: Int,
+        val left: Int,
+        val right: Int,
+        val text: String
+    )
+
+    private fun isWeChatChromeText(text: String): Boolean {
+        if (text.length > 2000) return true
+        return text in WECHAT_CHROME_TEXT
+    }
+
     companion object {
         private const val BUBBLE_ID = "com.tencent.mm:id/bkl"
+        private val WECHAT_CHROME_TEXT = setOf(
+            "发送", "按住 说话", "按住说话", "说话", "返回", "更多",
+            "相册", "拍摄", "视频通话", "位置", "红包", "转账",
+            "语音输入", "收藏", "个人名片", "文件"
+        )
     }
 }
 
